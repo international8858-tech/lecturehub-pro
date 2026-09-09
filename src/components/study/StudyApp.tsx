@@ -114,7 +114,7 @@ export default function StudyApp() {
   const allPdfs = useLiveQuery(() => db.pdfs.toArray(), []) ?? [];
   const allVideos = useLiveQuery(() => db.videos.toArray(), []) ?? [];
   const imgCount = useLiveQuery(() => db.images.count(), []) ?? 0;
-  const imgDone = useLiveQuery(() => db.images.where("isCompleted").equals(1).count(), []) ?? 0;
+  const imgDone = useLiveQuery(() => db.images.filter((i) => i.isCompleted === 1).count(), []) ?? 0;
 
   // folder progress (recomputed whenever data changes)
   useEffect(() => {
