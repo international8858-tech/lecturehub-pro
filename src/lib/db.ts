@@ -82,14 +82,45 @@ class StudyDB extends Dexie {
 
 export const db = new StudyDB();
 
-export async function seedDefaults() {
-  if ((await db.folders.count()) > 0) return;
-  const now = Date.now();
-  await db.folders.bulkAdd([
-    { name: "Physics", parentId: null, color: "blue", createdAt: now },
-    { name: "Chemistry", parentId: null, color: "orange", createdAt: now + 1 },
-    { name: "Mathematics", parentId: null, color: "green", createdAt: now + 2 },
-  ]);
+let seeding: Promise<void> | null = null;
+
+export function seedDefaults(): Promise<void> {
+  // Single-flight + transactional guard so React's double-invoked effects
+  // (and any re-mount) can never create duplicate starter folders.
+  seeding ??= db
+    .transaction("rw", db.folders, async () => {
+      if ((await db.folders.count()) > 0) return;
+      const now = Date.now();
+      await db.folders.bulkAdd([
+        { name: "Physics", parentId: null, color: "blue", createdAt: now },
+        { name: "Chemistry", parentId: null, color: "orange", createdAt: now + 1 },
+        { name: "Mathematics", parentId: null, color: "green", createdAt: now + 2 },
+      ]);
+    })
+    .then(() => dedupeEmptyRoots())
+    .catch(() => {});
+  return seeding;
+}
+
+/** One-time repair: drop duplicate top-level folders that are completely empty. */
+async function dedupeEmptyRoots() {
+  const all = await db.folders.toArray();
+  const roots = all.filter((f) => f.parentId === null);
+  const seen = new Set<string>();
+  for (const f of roots.sort((a, b) => a.createdAt - b.createdAt)) {
+    const key = f.name.trim().toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      continue;
+    }
+    const id = f.id!;
+    const empty =
+      all.every((x) => x.parentId !== id) &&
+      (await db.images.where("folderId").equals(id).count()) === 0 &&
+      (await db.pdfs.where("folderId").equals(id).count()) === 0 &&
+      (await db.videos.where("folderId").equals(id).count()) === 0;
+    if (empty) await db.folders.delete(id);
+  }
 }
 
 export async function subtreeIds(id: number): Promise<number[]> {
