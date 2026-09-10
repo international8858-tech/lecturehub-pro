@@ -49,19 +49,7 @@ export function ImageEditor({ image, onClose }: { image: ImageItem; onClose: () 
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.drawImage(src, -w / 2, -h / 2, w, h);
     ctx.restore();
-    if (threshold > 0) {
-      const d = ctx.getImageData(0, 0, c.width, c.height);
-      const p = d.data;
-      for (let i = 0; i < p.length; i += 4) {
-        const L = 0.299 * (p[i] ?? 0) + 0.587 * (p[i + 1] ?? 0) + 0.114 * (p[i + 2] ?? 0);
-        const v = L < threshold ? 0 : 255;
-        p[i] = v;
-        p[i + 1] = v;
-        p[i + 2] = v;
-      }
-      ctx.putImageData(d, 0, 0);
-    }
-  }, [src, rotation, threshold]);
+  }, [src, rotation]);
 
   const onHandleDown = (corner: string) => (e: PointerEvent) => {
     e.stopPropagation();
