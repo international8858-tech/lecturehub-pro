@@ -36,6 +36,9 @@ export function VideoPlayer({ videoId, onClose }: { videoId: number; onClose: ()
   const [full, setFull] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const [attachSheet, setAttachSheet] = useState(false);
+  const [showTimer, setShowTimer] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   const [controls, setControls] = useState(true);
   const [flash, setFlash] = useState<"l" | "r" | null>(null);
   const tapTimer = useRef<number | null>(null);
@@ -155,6 +158,13 @@ export function VideoPlayer({ videoId, onClose }: { videoId: number; onClose: ()
               <p className="text-[11px] text-muted-foreground">Resumes automatically</p>
             )}
           </div>
+          <button
+            onClick={() => setShowTimer((v) => !v)}
+            className={`rounded-full p-2 ${showTimer ? "bg-accent text-accent-foreground" : "hover:bg-secondary"}`}
+            aria-label="Study timer"
+          >
+            <Timer className="h-5 w-5" />
+          </button>
           <button onClick={() => setAttachSheet(true)} className="rounded-full p-2 hover:bg-secondary" aria-label="Attach PDF">
             <Paperclip className="h-5 w-5" />
           </button>
