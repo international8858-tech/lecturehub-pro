@@ -235,13 +235,24 @@ export const PdfViewer = memo(function PdfViewer({ pdfId, onClose, embedded }: P
         })}
       </div>
       {hl && (
-        <div className="flex items-center justify-between border-t bg-card px-4 py-2 text-xs">
-          <span className="font-semibold">Drag over text to highlight · tap a highlight to erase</span>
+        <div className="flex items-center justify-between gap-2 border-t bg-card px-3 py-2 text-xs">
+          <div className="flex items-center gap-1.5">
+            {HL_COLORS.map((c) => (
+              <button
+                key={c}
+                onClick={() => setColor(c)}
+                aria-label={`Highlight colour ${c}`}
+                className={`h-6 w-6 rounded-full border ${color === c ? "ring-2 ring-ring ring-offset-1" : ""}`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
           <Btn variant="secondary" className="!py-1 !px-3" onClick={() => setHl(false)}>
             <Eraser className="h-3.5 w-3.5" /> Done
           </Btn>
         </div>
       )}
+      {showTimer && <StudyTimer onClose={() => setShowTimer(false)} />}
     </div>
   );
-}
+});
