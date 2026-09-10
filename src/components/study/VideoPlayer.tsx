@@ -295,8 +295,37 @@ export function VideoPlayer({ videoId, onClose }: { videoId: number; onClose: ()
         </div>
       )}
 
+      {showTimer && <StudyTimer onClose={() => setShowTimer(false)} />}
+
+      <input
+        ref={pdfInputRef}
+        type="file"
+        accept="application/pdf"
+        hidden
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f || !video) return;
+          setImporting(true);
+          let pageCount = 0;
+          try {
+            const pdfjs = await loadPdfJs();
+            pageCount = (await pdfjs.getDocument({ data: await f.arrayBuffer() }).promise).numPages;
+          } catch {}
+          const id = await addPdf(video.folderId, f.name.replace(/\.pdf$/i, ""), f, pageCount);
+          await db.videos.update(videoId, { attachedPdfId: id });
+          setImporting(false);
+          setAttachSheet(false);
+        }}
+      />
+
       <Sheet open={attachSheet} onClose={() => setAttachSheet(false)} title="Attach PDF notes">
         <div className="max-h-[50vh] space-y-1 overflow-y-auto">
+          <SheetItem
+            icon={<Upload className="h-4 w-4" />}
+            label={importing ? "Importing PDF…" : "Pick PDF from phone / gallery"}
+            onClick={() => pdfInputRef.current?.click()}
+          />
           {attached && (
             <SheetItem icon={<X className="h-4 w-4" />} label="Remove attached PDF" danger onClick={async () => {
               await db.videos.update(videoId, { attachedPdfId: null });
