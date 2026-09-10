@@ -19,6 +19,8 @@ export const PdfViewer = memo(function PdfViewer({ pdfId, onClose, embedded }: P
   const [loading, setLoading] = useState(true);
   const [full, setFull] = useState(false);
   const [hl, setHl] = useState(false);
+  const [color, setColor] = useState(HL_COLORS[0]!);
+  const [showTimer, setShowTimer] = useState(false);
   const [draft, setDraft] = useState<Highlight | null>(null);
   const [busy, setBusy] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -72,7 +74,7 @@ export const PdfViewer = memo(function PdfViewer({ pdfId, onClose, embedded }: P
     e.currentTarget.setPointerCapture(e.pointerId);
     const p = norm(e, e.currentTarget);
     start.current = { page, ...p };
-    setDraft({ page, x: p.x, y: p.y, w: 0, h: 0 });
+    setDraft({ page, x: p.x, y: p.y, w: 0, h: 0, color });
   };
   const move = (e: PointerEvent<HTMLDivElement>) => {
     if (!hl || !start.current) return;
