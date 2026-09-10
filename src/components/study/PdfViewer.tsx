@@ -145,6 +145,13 @@ export const PdfViewer = memo(function PdfViewer({ pdfId, onClose, embedded }: P
           >
             <Highlighter className="h-5 w-5" />
           </button>
+          <button
+            onClick={() => setShowTimer((v) => !v)}
+            className={`rounded-full p-2 ${showTimer ? "bg-accent text-accent-foreground" : "hover:bg-secondary"}`}
+            aria-label="Study timer"
+          >
+            <Timer className="h-5 w-5" />
+          </button>
           <button onClick={() => setFull((v) => !v)} className="rounded-full p-2 hover:bg-secondary" aria-label="Fullscreen">
             {full ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
           </button>
@@ -156,6 +163,9 @@ export const PdfViewer = memo(function PdfViewer({ pdfId, onClose, embedded }: P
           <div className="flex gap-1">
             <button onClick={() => setHl((v) => !v)} className={`rounded-full p-1.5 ${hl ? "bg-highlight" : ""}`} aria-label="Highlighter">
               <Highlighter className="h-4 w-4" />
+            </button>
+            <button onClick={() => setShowTimer((v) => !v)} className={`rounded-full p-1.5 ${showTimer ? "bg-accent" : ""}`} aria-label="Study timer">
+              <Timer className="h-4 w-4" />
             </button>
             <button onClick={() => setFull(true)} className="rounded-full p-1.5" aria-label="Fullscreen">
               <Maximize2 className="h-4 w-4" />
