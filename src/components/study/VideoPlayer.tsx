@@ -12,11 +12,13 @@ import {
   Check,
   X,
   Paperclip,
+  Timer,
+  Upload,
 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { db, addPdf, loadPdfJs } from "@/lib/db";
 import { PdfViewer } from "./PdfViewer";
-import { Sheet, SheetItem, fmt } from "./ui";
+import { Sheet, SheetItem, StudyTimer, fmt } from "./ui";
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
