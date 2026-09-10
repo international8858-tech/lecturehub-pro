@@ -12,11 +12,13 @@ import {
   Check,
   X,
   Paperclip,
+  Timer,
+  Upload,
 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { db, addPdf, loadPdfJs } from "@/lib/db";
 import { PdfViewer } from "./PdfViewer";
-import { Sheet, SheetItem, fmt } from "./ui";
+import { Sheet, SheetItem, StudyTimer, fmt } from "./ui";
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -34,6 +36,9 @@ export function VideoPlayer({ videoId, onClose }: { videoId: number; onClose: ()
   const [full, setFull] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const [attachSheet, setAttachSheet] = useState(false);
+  const [showTimer, setShowTimer] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   const [controls, setControls] = useState(true);
   const [flash, setFlash] = useState<"l" | "r" | null>(null);
   const tapTimer = useRef<number | null>(null);
@@ -153,6 +158,13 @@ export function VideoPlayer({ videoId, onClose }: { videoId: number; onClose: ()
               <p className="text-[11px] text-muted-foreground">Resumes automatically</p>
             )}
           </div>
+          <button
+            onClick={() => setShowTimer((v) => !v)}
+            className={`rounded-full p-2 ${showTimer ? "bg-accent text-accent-foreground" : "hover:bg-secondary"}`}
+            aria-label="Study timer"
+          >
+            <Timer className="h-5 w-5" />
+          </button>
           <button onClick={() => setAttachSheet(true)} className="rounded-full p-2 hover:bg-secondary" aria-label="Attach PDF">
             <Paperclip className="h-5 w-5" />
           </button>
@@ -283,8 +295,37 @@ export function VideoPlayer({ videoId, onClose }: { videoId: number; onClose: ()
         </div>
       )}
 
+      {showTimer && <StudyTimer onClose={() => setShowTimer(false)} />}
+
+      <input
+        ref={pdfInputRef}
+        type="file"
+        accept="application/pdf"
+        hidden
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f || !video) return;
+          setImporting(true);
+          let pageCount = 0;
+          try {
+            const pdfjs = await loadPdfJs();
+            pageCount = (await pdfjs.getDocument({ data: await f.arrayBuffer() }).promise).numPages;
+          } catch {}
+          const id = await addPdf(video.folderId, f.name.replace(/\.pdf$/i, ""), f, pageCount);
+          await db.videos.update(videoId, { attachedPdfId: id });
+          setImporting(false);
+          setAttachSheet(false);
+        }}
+      />
+
       <Sheet open={attachSheet} onClose={() => setAttachSheet(false)} title="Attach PDF notes">
         <div className="max-h-[50vh] space-y-1 overflow-y-auto">
+          <SheetItem
+            icon={<Upload className="h-4 w-4" />}
+            label={importing ? "Importing PDF…" : "Pick PDF from phone / gallery"}
+            onClick={() => pdfInputRef.current?.click()}
+          />
           {attached && (
             <SheetItem icon={<X className="h-4 w-4" />} label="Remove attached PDF" danger onClick={async () => {
               await db.videos.update(videoId, { attachedPdfId: null });

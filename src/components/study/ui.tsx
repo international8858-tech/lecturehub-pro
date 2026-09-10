@@ -213,6 +213,83 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
 export const inputCls =
   "w-full rounded-2xl border border-input bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring";
 
+/** Optional study timer — countdown with presets, runs while you read. */
+export function StudyTimer({ onClose }: { onClose: () => void }) {
+  const [left, setLeft] = useState(25 * 60);
+  const [running, setRunning] = useState(false);
+  const [mini, setMini] = useState(false);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!running) return;
+    const id = window.setInterval(() => {
+      setLeft((v) => {
+        if (v <= 1) {
+          setRunning(false);
+          setDone(true);
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          return 0;
+        }
+        return v - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [running]);
+
+  const set = (m: number) => {
+    setLeft(m * 60);
+    setDone(false);
+  };
+  const label = `${Math.floor(left / 60)
+    .toString()
+    .padStart(2, "0")}:${(left % 60).toString().padStart(2, "0")}`;
+
+  if (mini)
+    return (
+      <button
+        onClick={() => setMini(false)}
+        className={`fixed bottom-24 left-4 z-50 rounded-full px-3 py-2 text-xs font-extrabold tabular-nums shadow-fab ${
+          done ? "bg-destructive text-destructive-foreground" : "bg-foreground text-background"
+        }`}
+      >
+        ⏱ {label}
+      </button>
+    );
+
+  return (
+    <div className="fixed bottom-24 left-4 right-4 z-50 mx-auto max-w-xs rounded-3xl bg-card p-4 shadow-fab">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-bold text-muted-foreground">Study Timer</p>
+        <div className="flex gap-1">
+          <button onClick={() => setMini(true)} className="rounded-full bg-secondary px-2 py-1 text-[10px] font-bold">
+            Minimise
+          </button>
+          <button onClick={onClose} className="rounded-full bg-secondary p-1" aria-label="Close timer">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+      <p className={`text-center text-4xl font-extrabold tabular-nums ${done ? "text-destructive" : ""}`}>{label}</p>
+      {done && <p className="mt-1 text-center text-xs font-bold text-destructive">Time up! Take a short break.</p>}
+      <div className="mt-3 flex justify-center gap-2">
+        {[5, 15, 25, 45].map((m) => (
+          <button key={m} onClick={() => set(m)} className="rounded-full bg-secondary px-3 py-1 text-xs font-bold">
+            {m}m
+          </button>
+        ))}
+      </div>
+      <div className="mt-3 flex gap-2">
+        <Btn className="flex-1" onClick={() => { setDone(false); setRunning((r) => !r); }}>
+          {running ? "Pause" : "Start"}
+        </Btn>
+        <Btn variant="secondary" onClick={() => { setRunning(false); setDone(false); setLeft(25 * 60); }}>
+          Reset
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
 export function fmt(s: number) {
   if (!isFinite(s)) return "0:00";
   const m = Math.floor(s / 60);

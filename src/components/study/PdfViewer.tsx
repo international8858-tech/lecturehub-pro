@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { ArrowLeft, Highlighter, Maximize2, Minimize2, Check, ImagePlus, Eraser } from "lucide-react";
+import { memo, useEffect, useRef, useState, type PointerEvent } from "react";
+import { ArrowLeft, Highlighter, Maximize2, Minimize2, Check, ImagePlus, Eraser, Timer } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, loadPdfJs, buildPdf, type Highlight } from "@/lib/db";
-import { Btn } from "./ui";
+import { Btn, StudyTimer } from "./ui";
 
 interface Props {
   pdfId: number;
@@ -10,13 +10,17 @@ interface Props {
   embedded?: boolean; // used inside video split-view / drawer
 }
 
-export function PdfViewer({ pdfId, onClose, embedded }: Props) {
+export const HL_COLORS = ["#fde047", "#86efac", "#93c5fd", "#f9a8d4", "#fdba74"];
+
+export const PdfViewer = memo(function PdfViewer({ pdfId, onClose, embedded }: Props) {
   const pdf = useLiveQuery(() => db.pdfs.get(pdfId), [pdfId]);
   const blobRow = useLiveQuery(() => (pdf ? db.blobs.get(pdf.blobId) : undefined), [pdf?.blobId]);
   const [pages, setPages] = useState<{ n: number; url: string; w: number; h: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [full, setFull] = useState(false);
   const [hl, setHl] = useState(false);
+  const [color, setColor] = useState(HL_COLORS[0]!);
+  const [showTimer, setShowTimer] = useState(false);
   const [draft, setDraft] = useState<Highlight | null>(null);
   const [busy, setBusy] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -70,13 +74,13 @@ export function PdfViewer({ pdfId, onClose, embedded }: Props) {
     e.currentTarget.setPointerCapture(e.pointerId);
     const p = norm(e, e.currentTarget);
     start.current = { page, ...p };
-    setDraft({ page, x: p.x, y: p.y, w: 0, h: 0 });
+    setDraft({ page, x: p.x, y: p.y, w: 0, h: 0, color });
   };
   const move = (e: PointerEvent<HTMLDivElement>) => {
     if (!hl || !start.current) return;
     const p = norm(e, e.currentTarget);
     const s = start.current;
-    setDraft({ page: s.page, x: Math.min(s.x, p.x), y: Math.min(s.y, p.y), w: Math.abs(p.x - s.x), h: Math.abs(p.y - s.y) });
+    setDraft({ page: s.page, x: Math.min(s.x, p.x), y: Math.min(s.y, p.y), w: Math.abs(p.x - s.x), h: Math.abs(p.y - s.y), color });
   };
   const up = async () => {
     if (!hl || !draft || !pdf) return;
@@ -141,6 +145,13 @@ export function PdfViewer({ pdfId, onClose, embedded }: Props) {
           >
             <Highlighter className="h-5 w-5" />
           </button>
+          <button
+            onClick={() => setShowTimer((v) => !v)}
+            className={`rounded-full p-2 ${showTimer ? "bg-accent text-accent-foreground" : "hover:bg-secondary"}`}
+            aria-label="Study timer"
+          >
+            <Timer className="h-5 w-5" />
+          </button>
           <button onClick={() => setFull((v) => !v)} className="rounded-full p-2 hover:bg-secondary" aria-label="Fullscreen">
             {full ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
           </button>
@@ -152,6 +163,9 @@ export function PdfViewer({ pdfId, onClose, embedded }: Props) {
           <div className="flex gap-1">
             <button onClick={() => setHl((v) => !v)} className={`rounded-full p-1.5 ${hl ? "bg-highlight" : ""}`} aria-label="Highlighter">
               <Highlighter className="h-4 w-4" />
+            </button>
+            <button onClick={() => setShowTimer((v) => !v)} className={`rounded-full p-1.5 ${showTimer ? "bg-accent" : ""}`} aria-label="Study timer">
+              <Timer className="h-4 w-4" />
             </button>
             <button onClick={() => setFull(true)} className="rounded-full p-1.5" aria-label="Fullscreen">
               <Maximize2 className="h-4 w-4" />
@@ -181,15 +195,29 @@ export function PdfViewer({ pdfId, onClose, embedded }: Props) {
                     <div
                       key={i}
                       onClick={() => hl && removeHighlight(i)}
-                      className="absolute bg-highlight/50 mix-blend-multiply"
-                      style={{ left: `${a.x * 100}%`, top: `${a.y * 100}%`, width: `${a.w * 100}%`, height: `${a.h * 100}%` }}
+                      className="absolute mix-blend-multiply"
+                      style={{
+                        left: `${a.x * 100}%`,
+                        top: `${a.y * 100}%`,
+                        width: `${a.w * 100}%`,
+                        height: `${a.h * 100}%`,
+                        backgroundColor: a.color ?? HL_COLORS[0],
+                        opacity: 0.5,
+                      }}
                     />
                   ) : null,
                 )}
                 {draft && draft.page === p.n && (
                   <div
-                    className="absolute bg-highlight/50"
-                    style={{ left: `${draft.x * 100}%`, top: `${draft.y * 100}%`, width: `${draft.w * 100}%`, height: `${draft.h * 100}%` }}
+                    className="absolute mix-blend-multiply"
+                    style={{
+                      left: `${draft.x * 100}%`,
+                      top: `${draft.y * 100}%`,
+                      width: `${draft.w * 100}%`,
+                      height: `${draft.h * 100}%`,
+                      backgroundColor: draft.color ?? color,
+                      opacity: 0.5,
+                    }}
                   />
                 )}
               </div>
@@ -207,13 +235,24 @@ export function PdfViewer({ pdfId, onClose, embedded }: Props) {
         })}
       </div>
       {hl && (
-        <div className="flex items-center justify-between border-t bg-card px-4 py-2 text-xs">
-          <span className="font-semibold">Drag over text to highlight · tap a highlight to erase</span>
+        <div className="flex items-center justify-between gap-2 border-t bg-card px-3 py-2 text-xs">
+          <div className="flex items-center gap-1.5">
+            {HL_COLORS.map((c) => (
+              <button
+                key={c}
+                onClick={() => setColor(c)}
+                aria-label={`Highlight colour ${c}`}
+                className={`h-6 w-6 rounded-full border ${color === c ? "ring-2 ring-ring ring-offset-1" : ""}`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
           <Btn variant="secondary" className="!py-1 !px-3" onClick={() => setHl(false)}>
             <Eraser className="h-3.5 w-3.5" /> Done
           </Btn>
         </div>
       )}
+      {showTimer && <StudyTimer onClose={() => setShowTimer(false)} />}
     </div>
   );
-}
+});

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { ArrowLeft, Check, Crop, RotateCw, Save, Contrast } from "lucide-react";
+import { ArrowLeft, Check, Crop, RotateCw, Save } from "lucide-react";
 import { db, type ImageItem, type Difficulty } from "@/lib/db";
 import { Btn, difficulties, inputCls } from "./ui";
 
@@ -10,7 +10,7 @@ export function ImageEditor({ image, onClose }: { image: ImageItem; onClose: () 
   const boxRef = useRef<HTMLDivElement>(null);
   const [src, setSrc] = useState<HTMLImageElement | null>(null);
   const [rotation, setRotation] = useState(0);
-  const [threshold, setThreshold] = useState(0); // 0 = off
+  
   const [cropMode, setCropMode] = useState(false);
   const [crop, setCrop] = useState<Rect>({ x: 0.05, y: 0.05, w: 0.9, h: 0.9 });
   const [difficulty, setDifficulty] = useState<Difficulty>(image.difficulty);
@@ -49,19 +49,7 @@ export function ImageEditor({ image, onClose }: { image: ImageItem; onClose: () 
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.drawImage(src, -w / 2, -h / 2, w, h);
     ctx.restore();
-    if (threshold > 0) {
-      const d = ctx.getImageData(0, 0, c.width, c.height);
-      const p = d.data;
-      for (let i = 0; i < p.length; i += 4) {
-        const L = 0.299 * (p[i] ?? 0) + 0.587 * (p[i + 1] ?? 0) + 0.114 * (p[i + 2] ?? 0);
-        const v = L < threshold ? 0 : 255;
-        p[i] = v;
-        p[i + 1] = v;
-        p[i + 2] = v;
-      }
-      ctx.putImageData(d, 0, 0);
-    }
-  }, [src, rotation, threshold]);
+  }, [src, rotation]);
 
   const onHandleDown = (corner: string) => (e: PointerEvent) => {
     e.stopPropagation();
@@ -187,16 +175,6 @@ export function ImageEditor({ image, onClose }: { image: ImageItem; onClose: () 
             </Btn>
           </div>
 
-          <div className="rounded-2xl bg-card p-4 shadow-card">
-            <div className="mb-2 flex items-center justify-between text-sm font-bold">
-              <span className="flex items-center gap-2">
-                <Contrast className="h-4 w-4 text-primary" /> B&W Document Filter
-              </span>
-              <span className="text-xs text-muted-foreground">{threshold === 0 ? "Off" : threshold}</span>
-            </div>
-            <input type="range" min={0} max={255} value={threshold} onChange={(e) => setThreshold(+e.target.value)} className="w-full" />
-            <p className="mt-1 text-xs text-muted-foreground">Slide right to remove shadows & background, keep only the text.</p>
-          </div>
 
           <div className="rounded-2xl bg-card p-4 shadow-card">
             <p className="mb-2 text-sm font-bold">Question Level</p>
