@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { ArrowLeft, Highlighter, Maximize2, Minimize2, Check, ImagePlus, Eraser } from "lucide-react";
+import { memo, useEffect, useRef, useState, type PointerEvent } from "react";
+import { ArrowLeft, Highlighter, Maximize2, Minimize2, Check, ImagePlus, Eraser, Timer } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, loadPdfJs, buildPdf, type Highlight } from "@/lib/db";
-import { Btn } from "./ui";
+import { Btn, StudyTimer } from "./ui";
 
 interface Props {
   pdfId: number;
@@ -10,7 +10,9 @@ interface Props {
   embedded?: boolean; // used inside video split-view / drawer
 }
 
-export function PdfViewer({ pdfId, onClose, embedded }: Props) {
+export const HL_COLORS = ["#fde047", "#86efac", "#93c5fd", "#f9a8d4", "#fdba74"];
+
+export const PdfViewer = memo(function PdfViewer({ pdfId, onClose, embedded }: Props) {
   const pdf = useLiveQuery(() => db.pdfs.get(pdfId), [pdfId]);
   const blobRow = useLiveQuery(() => (pdf ? db.blobs.get(pdf.blobId) : undefined), [pdf?.blobId]);
   const [pages, setPages] = useState<{ n: number; url: string; w: number; h: number }[]>([]);
