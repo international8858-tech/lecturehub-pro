@@ -80,7 +80,7 @@ export const PdfViewer = memo(function PdfViewer({ pdfId, onClose, embedded }: P
     if (!hl || !start.current) return;
     const p = norm(e, e.currentTarget);
     const s = start.current;
-    setDraft({ page: s.page, x: Math.min(s.x, p.x), y: Math.min(s.y, p.y), w: Math.abs(p.x - s.x), h: Math.abs(p.y - s.y) });
+    setDraft({ page: s.page, x: Math.min(s.x, p.x), y: Math.min(s.y, p.y), w: Math.abs(p.x - s.x), h: Math.abs(p.y - s.y), color });
   };
   const up = async () => {
     if (!hl || !draft || !pdf) return;
