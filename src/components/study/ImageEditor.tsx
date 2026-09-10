@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { ArrowLeft, Check, Crop, RotateCw, Save, Contrast } from "lucide-react";
+import { ArrowLeft, Check, Crop, RotateCw, Save } from "lucide-react";
 import { db, type ImageItem, type Difficulty } from "@/lib/db";
 import { Btn, difficulties, inputCls } from "./ui";
 
@@ -10,7 +10,7 @@ export function ImageEditor({ image, onClose }: { image: ImageItem; onClose: () 
   const boxRef = useRef<HTMLDivElement>(null);
   const [src, setSrc] = useState<HTMLImageElement | null>(null);
   const [rotation, setRotation] = useState(0);
-  const [threshold, setThreshold] = useState(0); // 0 = off
+  
   const [cropMode, setCropMode] = useState(false);
   const [crop, setCrop] = useState<Rect>({ x: 0.05, y: 0.05, w: 0.9, h: 0.9 });
   const [difficulty, setDifficulty] = useState<Difficulty>(image.difficulty);
