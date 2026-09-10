@@ -187,16 +187,6 @@ export function ImageEditor({ image, onClose }: { image: ImageItem; onClose: () 
             </Btn>
           </div>
 
-          <div className="rounded-2xl bg-card p-4 shadow-card">
-            <div className="mb-2 flex items-center justify-between text-sm font-bold">
-              <span className="flex items-center gap-2">
-                <Contrast className="h-4 w-4 text-primary" /> B&W Document Filter
-              </span>
-              <span className="text-xs text-muted-foreground">{threshold === 0 ? "Off" : threshold}</span>
-            </div>
-            <input type="range" min={0} max={255} value={threshold} onChange={(e) => setThreshold(+e.target.value)} className="w-full" />
-            <p className="mt-1 text-xs text-muted-foreground">Slide right to remove shadows & background, keep only the text.</p>
-          </div>
 
           <div className="rounded-2xl bg-card p-4 shadow-card">
             <p className="mb-2 text-sm font-bold">Question Level</p>

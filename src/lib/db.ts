@@ -26,6 +26,7 @@ export interface Highlight {
   y: number;
   w: number;
   h: number;
+  color?: string;
 }
 export interface PdfItem {
   id?: number;
