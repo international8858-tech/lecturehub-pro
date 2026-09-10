@@ -195,15 +195,29 @@ export const PdfViewer = memo(function PdfViewer({ pdfId, onClose, embedded }: P
                     <div
                       key={i}
                       onClick={() => hl && removeHighlight(i)}
-                      className="absolute bg-highlight/50 mix-blend-multiply"
-                      style={{ left: `${a.x * 100}%`, top: `${a.y * 100}%`, width: `${a.w * 100}%`, height: `${a.h * 100}%` }}
+                      className="absolute mix-blend-multiply"
+                      style={{
+                        left: `${a.x * 100}%`,
+                        top: `${a.y * 100}%`,
+                        width: `${a.w * 100}%`,
+                        height: `${a.h * 100}%`,
+                        backgroundColor: a.color ?? HL_COLORS[0],
+                        opacity: 0.5,
+                      }}
                     />
                   ) : null,
                 )}
                 {draft && draft.page === p.n && (
                   <div
-                    className="absolute bg-highlight/50"
-                    style={{ left: `${draft.x * 100}%`, top: `${draft.y * 100}%`, width: `${draft.w * 100}%`, height: `${draft.h * 100}%` }}
+                    className="absolute mix-blend-multiply"
+                    style={{
+                      left: `${draft.x * 100}%`,
+                      top: `${draft.y * 100}%`,
+                      width: `${draft.w * 100}%`,
+                      height: `${draft.h * 100}%`,
+                      backgroundColor: draft.color ?? color,
+                      opacity: 0.5,
+                    }}
                   />
                 )}
               </div>
