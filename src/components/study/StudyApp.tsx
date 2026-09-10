@@ -81,6 +81,10 @@ export default function StudyApp() {
 
   useEffect(() => {
     seedDefaults();
+    // Register the offline service worker so the app opens with zero network.
+    if ("serviceWorker" in navigator && import.meta.env.PROD) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
     setStandalone(window.matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true);
     setOnline(navigator.onLine);
     const bip = (e: Event) => {
@@ -321,9 +325,9 @@ export default function StudyApp() {
                 <Download className="h-3.5 w-3.5" /> Install
               </button>
             )}
-            <span className={`flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${standalone ? "bg-success/15 text-success" : online ? "bg-secondary text-muted-foreground" : "bg-warning/20 text-foreground"}`}>
+            <span className="flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-[10px] font-bold text-success">
               {standalone ? <Smartphone className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-              {standalone ? "Installed" : online ? "Offline-ready" : "Offline"}
+              {standalone ? "Installed · Offline" : "Works offline"}
             </span>
           </div>
         </div>
