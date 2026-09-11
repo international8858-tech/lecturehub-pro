@@ -61,6 +61,42 @@ export interface BlobRow {
   blob: Blob;
 }
 
+export type Choice = "A" | "B" | "C" | "D";
+export interface Quiz {
+  id?: number;
+  folderId: number;
+  name: string;
+  wallpaperBlob: Blob | null;
+  count: number;
+  createdAt: number;
+}
+export interface Question {
+  id?: number;
+  quizId: number;
+  no: number;
+  imgBlob: Blob;
+  solBlob: Blob | null;
+  answer: Choice | null;
+}
+export interface Response {
+  no: number;
+  chosen: Choice | null;
+  answer: Choice | null;
+  marked: boolean;
+}
+export interface Attempt {
+  id?: number;
+  quizId: number;
+  quizName: string;
+  finishedAt: number;
+  timeSec: number;
+  total: number;
+  correct: number;
+  wrong: number;
+  skipped: number;
+  responses: Response[];
+}
+
 class StudyDB extends Dexie {
   folders!: Table<Folder, number>;
   images!: Table<ImageItem, number>;
@@ -68,6 +104,9 @@ class StudyDB extends Dexie {
   videos!: Table<VideoItem, number>;
   history!: Table<HistoryItem, number>;
   blobs!: Table<BlobRow, number>;
+  quizzes!: Table<Quiz, number>;
+  questions!: Table<Question, number>;
+  attempts!: Table<Attempt, number>;
   constructor() {
     super("studyhub");
     this.version(1).stores({
@@ -77,6 +116,11 @@ class StudyDB extends Dexie {
       videos: "++id, folderId, createdAt",
       history: "++id, videoId, watchedAt",
       blobs: "++id",
+    });
+    this.version(2).stores({
+      quizzes: "++id, folderId, createdAt",
+      questions: "++id, quizId, [quizId+no]",
+      attempts: "++id, quizId, finishedAt",
     });
   }
 }
