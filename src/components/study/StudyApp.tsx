@@ -276,6 +276,8 @@ export default function StudyApp() {
   }
   if (opened?.kind === "pdf") return <PdfViewer pdfId={opened.id} onClose={() => setOpened(null)} />;
   if (opened?.kind === "video") return <VideoPlayer videoId={opened.id} onClose={() => setOpened(null)} />;
+  if (openedQuiz != null) return <QuizRunner quizId={openedQuiz} onClose={() => setOpenedQuiz(null)} />;
+
 
   const folderCard = (f: Folder) => {
     const p = progressMap[f.id!];
