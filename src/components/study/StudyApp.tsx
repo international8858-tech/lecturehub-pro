@@ -23,7 +23,9 @@ import {
   X,
   FileStack,
   Clock,
+  ListChecks,
 } from "lucide-react";
+
 import {
   db,
   seedDefaults,
@@ -46,6 +48,9 @@ import { BlobImage, Btn, LongPressable, Modal, Ring, Sheet, SheetItem, colors, d
 import { ImageEditor } from "./ImageEditor";
 import { PdfViewer } from "./PdfViewer";
 import { VideoPlayer } from "./VideoPlayer";
+import { QuizRunner } from "./QuizRunner";
+import { createQuizFromImages, createQuizFromPdfs, deleteQuiz } from "@/lib/quiz";
+
 
 type Mode = "notes" | "lecture";
 type Tab = "home" | "stats" | "search";
@@ -63,7 +68,7 @@ export default function StudyApp() {
   const [opened, setOpened] = useState<Opened | null>(null);
   const [target, setTarget] = useState<Target | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [dialog, setDialog] = useState<"newFolder" | "rename" | "move" | "delete" | "pdfName" | null>(null);
+  const [dialog, setDialog] = useState<"newFolder" | "rename" | "move" | "delete" | "pdfName" | "quizName" | null>(null);
   const [text, setText] = useState("");
   const [color, setColor] = useState<FolderColor>("blue");
   const [selecting, setSelecting] = useState(false);
@@ -78,6 +83,11 @@ export default function StudyApp() {
   const cameraRef = useRef<HTMLInputElement>(null);
   const pdfRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
+  const [openedQuiz, setOpenedQuiz] = useState<number | null>(null);
+  const [pending, setPending] = useState<{ kind: "pdf" | "image"; files: File[] } | null>(null);
+  const quizPdfRef = useRef<HTMLInputElement>(null);
+  const quizPicRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     seedDefaults();
@@ -109,6 +119,8 @@ export default function StudyApp() {
   const images = useLiveQuery(() => (folderId == null ? [] : db.images.where("folderId").equals(folderId).sortBy("createdAt")), [folderId]) ?? [];
   const pdfs = useLiveQuery(() => (folderId == null ? [] : db.pdfs.where("folderId").equals(folderId).sortBy("createdAt")), [folderId]) ?? [];
   const videos = useLiveQuery(() => (folderId == null ? [] : db.videos.where("folderId").equals(folderId).sortBy("createdAt")), [folderId]) ?? [];
+  const quizzes = useLiveQuery(() => (folderId == null ? [] : db.quizzes.where("folderId").equals(folderId).sortBy("createdAt")), [folderId]) ?? [];
+
   const recent = useLiveQuery(async () => {
     const h = await db.history.orderBy("watchedAt").reverse().limit(30).toArray();
     const ids = [...new Set(h.map((x) => x.videoId))].slice(0, 6);
@@ -174,6 +186,35 @@ export default function StudyApp() {
     setBusy(null);
     setAddOpen(false);
   };
+  const pickQuizFiles = (files: FileList | null, kind: "pdf" | "image") => {
+    if (!files?.length || folderId == null) return;
+    setPending({ kind, files: Array.from(files) });
+    setText(kind === "pdf" ? (files[0]?.name.replace(/\.pdf$/i, "") ?? "Quiz") : `${current?.name ?? "Quiz"} test`);
+    setAddOpen(false);
+    setDialog("quizName");
+  };
+  const makeQuiz = async () => {
+    if (!pending || folderId == null) return;
+    setDialog(null);
+    const name = text.trim() || "Quiz";
+    try {
+      if (pending.kind === "pdf") {
+        setBusy("Reading paper…");
+        await createQuizFromPdfs(folderId, name, pending.files, (s) => setBusy(s));
+      } else {
+        setBusy("Adding photos…");
+        await createQuizFromImages(folderId, name, pending.files);
+      }
+    } catch {
+      setBusy("Could not read that file.");
+      window.setTimeout(() => setBusy(null), 2500);
+      setPending(null);
+      return;
+    }
+    setBusy(null);
+    setPending(null);
+  };
+
   const compilePdf = async () => {
     if (folderId == null || !selected.length) return;
     setBusy("Compiling PDF…");
@@ -235,6 +276,8 @@ export default function StudyApp() {
   }
   if (opened?.kind === "pdf") return <PdfViewer pdfId={opened.id} onClose={() => setOpened(null)} />;
   if (opened?.kind === "video") return <VideoPlayer videoId={opened.id} onClose={() => setOpened(null)} />;
+  if (openedQuiz != null) return <QuizRunner quizId={openedQuiz} onClose={() => setOpenedQuiz(null)} />;
+
 
   const folderCard = (f: Folder) => {
     const p = progressMap[f.id!];
@@ -403,6 +446,37 @@ export default function StudyApp() {
 
                 <section className="space-y-2">
                   <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold">Quizzes</h2>
+                    <button onClick={() => quizPdfRef.current?.click()} className="flex items-center gap-1 text-xs font-bold text-primary">
+                      <ListChecks className="h-4 w-4" /> New quiz
+                    </button>
+                  </div>
+                  {quizzes.length === 0 && <p className="text-xs text-muted-foreground">Upload a question paper PDF — questions, options and the answer key are captured automatically.</p>}
+                  {quizzes.map((qz) => (
+                    <div key={qz.id} className="press flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card">
+                      <button onClick={() => setOpenedQuiz(qz.id!)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                        <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+                          <ListChecks className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold">{qz.name}</p>
+                          <p className="text-[11px] text-muted-foreground">{qz.count} questions</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => void deleteQuiz(qz.id!)}
+                        className="rounded-full p-2 text-destructive hover:bg-secondary"
+                        aria-label={`Delete ${qz.name}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </section>
+
+
+                <section className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold">Questions & Photos</h2>
                     {images.length > 0 && (
                       <button
@@ -564,6 +638,9 @@ export default function StudyApp() {
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => addImages(e.target.files)} />
       <input ref={pdfRef} type="file" accept="application/pdf" multiple hidden onChange={(e) => uploadPdf(e.target.files)} />
       <input ref={videoRef} type="file" accept="video/*" multiple hidden onChange={(e) => uploadVideo(e.target.files)} />
+      <input ref={quizPdfRef} type="file" accept="application/pdf" multiple hidden onChange={(e) => pickQuizFiles(e.target.files, "pdf")} />
+      <input ref={quizPicRef} type="file" accept="image/*" multiple hidden onChange={(e) => pickQuizFiles(e.target.files, "image")} />
+
 
       {/* add sheet */}
       <Sheet open={addOpen} onClose={() => setAddOpen(false)} title={current ? `Add to ${current.name}` : "Add"}>
@@ -574,6 +651,9 @@ export default function StudyApp() {
               <SheetItem icon={<Camera className="h-4 w-4" />} label="Capture with camera" onClick={() => cameraRef.current?.click()} />
               <SheetItem icon={<Images className="h-4 w-4" />} label="Upload photos from gallery" onClick={() => galleryRef.current?.click()} />
               <SheetItem icon={<FileText className="h-4 w-4" />} label="Upload PDF" onClick={() => pdfRef.current?.click()} />
+              <SheetItem icon={<ListChecks className="h-4 w-4" />} label="New quiz from question paper PDF" onClick={() => quizPdfRef.current?.click()} />
+              <SheetItem icon={<Images className="h-4 w-4" />} label="New quiz from question photos" onClick={() => quizPicRef.current?.click()} />
+
             </>
           )}
           {folderId != null && mode === "lecture" && <SheetItem icon={<Video className="h-4 w-4" />} label="Upload lecture video" onClick={() => videoRef.current?.click()} />}
@@ -613,7 +693,21 @@ export default function StudyApp() {
         </div>
       </Modal>
 
+      <Modal open={dialog === "quizName"} onClose={() => { setDialog(null); setPending(null); }} title="Name this quiz">
+        <input autoFocus className={inputCls} placeholder="e.g. DPP 01 Kinematics" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && makeQuiz()} />
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {pending?.kind === "pdf"
+            ? "Each question with its options is captured automatically, plus the answer key and solutions if the paper has them."
+            : "One photo = one question. You can fill the answer key inside the quiz."}
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Btn variant="secondary" onClick={() => { setDialog(null); setPending(null); }}>Cancel</Btn>
+          <Btn onClick={makeQuiz}>Create</Btn>
+        </div>
+      </Modal>
+
       <Modal open={dialog === "pdfName"} onClose={() => setDialog(null)} title="Name your PDF">
+
         <input autoFocus className={inputCls} placeholder={`${current?.name ?? "Notes"} compilation`} value={text} onChange={(e) => setText(e.target.value)} />
         <div className="mt-4 flex justify-end gap-2">
           <Btn variant="secondary" onClick={() => setDialog(null)}>Cancel</Btn>
