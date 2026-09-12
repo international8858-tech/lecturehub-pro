@@ -186,6 +186,35 @@ export default function StudyApp() {
     setBusy(null);
     setAddOpen(false);
   };
+  const pickQuizFiles = (files: FileList | null, kind: "pdf" | "image") => {
+    if (!files?.length || folderId == null) return;
+    setPending({ kind, files: Array.from(files) });
+    setText(kind === "pdf" ? (files[0]?.name.replace(/\.pdf$/i, "") ?? "Quiz") : `${current?.name ?? "Quiz"} test`);
+    setAddOpen(false);
+    setDialog("quizName");
+  };
+  const makeQuiz = async () => {
+    if (!pending || folderId == null) return;
+    setDialog(null);
+    const name = text.trim() || "Quiz";
+    try {
+      if (pending.kind === "pdf") {
+        setBusy("Reading paper…");
+        await createQuizFromPdfs(folderId, name, pending.files, (s) => setBusy(s));
+      } else {
+        setBusy("Adding photos…");
+        await createQuizFromImages(folderId, name, pending.files);
+      }
+    } catch {
+      setBusy("Could not read that file.");
+      window.setTimeout(() => setBusy(null), 2500);
+      setPending(null);
+      return;
+    }
+    setBusy(null);
+    setPending(null);
+  };
+
   const compilePdf = async () => {
     if (folderId == null || !selected.length) return;
     setBusy("Compiling PDF…");
