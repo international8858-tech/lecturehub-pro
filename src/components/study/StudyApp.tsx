@@ -68,7 +68,7 @@ export default function StudyApp() {
   const [opened, setOpened] = useState<Opened | null>(null);
   const [target, setTarget] = useState<Target | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [dialog, setDialog] = useState<"newFolder" | "rename" | "move" | "delete" | "pdfName" | null>(null);
+  const [dialog, setDialog] = useState<"newFolder" | "rename" | "move" | "delete" | "pdfName" | "quizName" | null>(null);
   const [text, setText] = useState("");
   const [color, setColor] = useState<FolderColor>("blue");
   const [selecting, setSelecting] = useState(false);
