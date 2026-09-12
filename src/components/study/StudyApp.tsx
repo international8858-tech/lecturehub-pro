@@ -693,7 +693,21 @@ export default function StudyApp() {
         </div>
       </Modal>
 
+      <Modal open={dialog === "quizName"} onClose={() => { setDialog(null); setPending(null); }} title="Name this quiz">
+        <input autoFocus className={inputCls} placeholder="e.g. DPP 01 Kinematics" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && makeQuiz()} />
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {pending?.kind === "pdf"
+            ? "Each question with its options is captured automatically, plus the answer key and solutions if the paper has them."
+            : "One photo = one question. You can fill the answer key inside the quiz."}
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Btn variant="secondary" onClick={() => { setDialog(null); setPending(null); }}>Cancel</Btn>
+          <Btn onClick={makeQuiz}>Create</Btn>
+        </div>
+      </Modal>
+
       <Modal open={dialog === "pdfName"} onClose={() => setDialog(null)} title="Name your PDF">
+
         <input autoFocus className={inputCls} placeholder={`${current?.name ?? "Notes"} compilation`} value={text} onChange={(e) => setText(e.target.value)} />
         <div className="mt-4 flex justify-end gap-2">
           <Btn variant="secondary" onClick={() => setDialog(null)}>Cancel</Btn>
