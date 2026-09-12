@@ -638,6 +638,9 @@ export default function StudyApp() {
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => addImages(e.target.files)} />
       <input ref={pdfRef} type="file" accept="application/pdf" multiple hidden onChange={(e) => uploadPdf(e.target.files)} />
       <input ref={videoRef} type="file" accept="video/*" multiple hidden onChange={(e) => uploadVideo(e.target.files)} />
+      <input ref={quizPdfRef} type="file" accept="application/pdf" multiple hidden onChange={(e) => pickQuizFiles(e.target.files, "pdf")} />
+      <input ref={quizPicRef} type="file" accept="image/*" multiple hidden onChange={(e) => pickQuizFiles(e.target.files, "image")} />
+
 
       {/* add sheet */}
       <Sheet open={addOpen} onClose={() => setAddOpen(false)} title={current ? `Add to ${current.name}` : "Add"}>
