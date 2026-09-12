@@ -446,6 +446,37 @@ export default function StudyApp() {
 
                 <section className="space-y-2">
                   <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold">Quizzes</h2>
+                    <button onClick={() => quizPdfRef.current?.click()} className="flex items-center gap-1 text-xs font-bold text-primary">
+                      <ListChecks className="h-4 w-4" /> New quiz
+                    </button>
+                  </div>
+                  {quizzes.length === 0 && <p className="text-xs text-muted-foreground">Upload a question paper PDF — questions, options and the answer key are captured automatically.</p>}
+                  {quizzes.map((qz) => (
+                    <div key={qz.id} className="press flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card">
+                      <button onClick={() => setOpenedQuiz(qz.id!)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                        <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+                          <ListChecks className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold">{qz.name}</p>
+                          <p className="text-[11px] text-muted-foreground">{qz.count} questions</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => void deleteQuiz(qz.id!)}
+                        className="rounded-full p-2 text-destructive hover:bg-secondary"
+                        aria-label={`Delete ${qz.name}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </section>
+
+
+                <section className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold">Questions & Photos</h2>
                     {images.length > 0 && (
                       <button
