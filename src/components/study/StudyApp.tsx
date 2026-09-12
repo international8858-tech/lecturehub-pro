@@ -23,7 +23,9 @@ import {
   X,
   FileStack,
   Clock,
+  ListChecks,
 } from "lucide-react";
+
 import {
   db,
   seedDefaults,
