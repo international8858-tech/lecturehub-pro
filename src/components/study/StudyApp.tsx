@@ -119,6 +119,8 @@ export default function StudyApp() {
   const images = useLiveQuery(() => (folderId == null ? [] : db.images.where("folderId").equals(folderId).sortBy("createdAt")), [folderId]) ?? [];
   const pdfs = useLiveQuery(() => (folderId == null ? [] : db.pdfs.where("folderId").equals(folderId).sortBy("createdAt")), [folderId]) ?? [];
   const videos = useLiveQuery(() => (folderId == null ? [] : db.videos.where("folderId").equals(folderId).sortBy("createdAt")), [folderId]) ?? [];
+  const quizzes = useLiveQuery(() => (folderId == null ? [] : db.quizzes.where("folderId").equals(folderId).sortBy("createdAt")), [folderId]) ?? [];
+
   const recent = useLiveQuery(async () => {
     const h = await db.history.orderBy("watchedAt").reverse().limit(30).toArray();
     const ids = [...new Set(h.map((x) => x.videoId))].slice(0, 6);
