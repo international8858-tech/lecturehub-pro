@@ -83,6 +83,11 @@ export default function StudyApp() {
   const cameraRef = useRef<HTMLInputElement>(null);
   const pdfRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
+  const [openedQuiz, setOpenedQuiz] = useState<number | null>(null);
+  const [pending, setPending] = useState<{ kind: "pdf" | "image"; files: File[] } | null>(null);
+  const quizPdfRef = useRef<HTMLInputElement>(null);
+  const quizPicRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     seedDefaults();
