@@ -48,6 +48,9 @@ import { BlobImage, Btn, LongPressable, Modal, Ring, Sheet, SheetItem, colors, d
 import { ImageEditor } from "./ImageEditor";
 import { PdfViewer } from "./PdfViewer";
 import { VideoPlayer } from "./VideoPlayer";
+import { QuizRunner } from "./QuizRunner";
+import { createQuizFromImages, createQuizFromPdfs, deleteQuiz } from "@/lib/quiz";
+
 
 type Mode = "notes" | "lecture";
 type Tab = "home" | "stats" | "search";
