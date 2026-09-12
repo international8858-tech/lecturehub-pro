@@ -651,6 +651,9 @@ export default function StudyApp() {
               <SheetItem icon={<Camera className="h-4 w-4" />} label="Capture with camera" onClick={() => cameraRef.current?.click()} />
               <SheetItem icon={<Images className="h-4 w-4" />} label="Upload photos from gallery" onClick={() => galleryRef.current?.click()} />
               <SheetItem icon={<FileText className="h-4 w-4" />} label="Upload PDF" onClick={() => pdfRef.current?.click()} />
+              <SheetItem icon={<ListChecks className="h-4 w-4" />} label="New quiz from question paper PDF" onClick={() => quizPdfRef.current?.click()} />
+              <SheetItem icon={<Images className="h-4 w-4" />} label="New quiz from question photos" onClick={() => quizPicRef.current?.click()} />
+
             </>
           )}
           {folderId != null && mode === "lecture" && <SheetItem icon={<Video className="h-4 w-4" />} label="Upload lecture video" onClick={() => videoRef.current?.click()} />}
