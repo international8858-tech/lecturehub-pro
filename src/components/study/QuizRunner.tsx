@@ -69,6 +69,7 @@ export function QuizRunner({ quizId, onClose }: { quizId: number; onClose: () =>
 
   const start = () => {
     setChosen({});
+    setTyped({});
     setMarked([]);
     setIdx(0);
     setElapsed(0);
@@ -77,16 +78,28 @@ export function QuizRunner({ quizId, onClose }: { quizId: number; onClose: () =>
     setView("run");
   };
 
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ").replace(/[.,;]+$/, "");
+
   const submit = async () => {
-    const responses: Response[] = questions.map((q) => ({
-      no: q.no,
-      chosen: chosen[q.no] ?? null,
-      answer: q.answer,
-      marked: marked.includes(q.no),
-    }));
-    const correct = responses.filter((r) => r.answer && r.chosen === r.answer).length;
-    const wrong = responses.filter((r) => r.answer && r.chosen && r.chosen !== r.answer).length;
-    const skipped = responses.filter((r) => !r.chosen).length;
+    const responses: Response[] = questions.map((q) => {
+      const isText = q.kind === "text";
+      const t = typed[q.no]?.trim() || null;
+      const given = isText ? t : (chosen[q.no] ?? null);
+      const key = isText ? (q.answerText?.trim() || null) : q.answer;
+      const correct = !!given && !!key && (isText ? norm(t!) === norm(key) : chosen[q.no] === q.answer);
+      return {
+        no: q.no,
+        chosen: isText ? null : (chosen[q.no] ?? null),
+        answer: q.answer,
+        marked: marked.includes(q.no),
+        text: t,
+        correct,
+      };
+    });
+    const attempted = (r: Response) => !!(r.chosen || r.text);
+    const correct = responses.filter((r) => r.correct).length;
+    const wrong = responses.filter((r) => attempted(r) && !r.correct).length;
+    const skipped = responses.filter((r) => !attempted(r)).length;
     const attempt: Attempt = {
       quizId,
       quizName: quiz?.name ?? "Quiz",
