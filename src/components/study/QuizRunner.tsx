@@ -168,6 +168,18 @@ export function QuizRunner({ quizId, onClose }: { quizId: number; onClose: () =>
                   </button>
                 ))}
               </div>
+              <label className="mt-2 flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                Custom time
+                <input
+                  type="number"
+                  min={0}
+                  max={600}
+                  value={mins}
+                  onChange={(e) => setMins(Math.max(0, Math.min(600, Number(e.target.value) || 0)))}
+                  className="w-20 rounded-xl bg-secondary px-2 py-1 text-sm font-extrabold text-foreground"
+                />
+                min
+              </label>
               <Btn className="mt-4 w-full" onClick={start} disabled={!questions.length}>
                 <Play className="h-4 w-4" /> Start Test
               </Btn>
