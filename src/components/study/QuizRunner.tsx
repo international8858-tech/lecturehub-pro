@@ -260,19 +260,36 @@ export function QuizRunner({ quizId, onClose }: { quizId: number; onClose: () =>
         <input ref={picRef} type="file" accept="image/*" multiple hidden onChange={(e) => addFiles(e.target.files, "image")} />
 
         <Modal open={keyOpen} onClose={() => setKeyOpen(false)} title="Answer key">
-          <div className="max-h-[55vh] space-y-1.5 overflow-y-auto">
+          <div className="max-h-[55vh] space-y-2 overflow-y-auto">
             {questions.map((q) => (
-              <div key={q.id} className="flex items-center gap-2">
-                <span className="w-9 shrink-0 text-xs font-bold">Q{q.no}</span>
-                {CHOICES.map((c) => (
+              <div key={q.id} className="rounded-xl bg-secondary/40 p-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-9 shrink-0 text-xs font-bold">Q{q.no}</span>
+                  {q.kind === "text" ? (
+                    <input
+                      value={q.answerText ?? ""}
+                      onChange={(e) => db.questions.update(q.id!, { answerText: e.target.value })}
+                      placeholder="Type the correct answer"
+                      className="h-8 flex-1 rounded-xl bg-card px-2 text-xs font-semibold"
+                    />
+                  ) : (
+                    CHOICES.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setAnswer(q, c)}
+                        className={`h-8 flex-1 rounded-xl text-xs font-bold ${q.answer === c ? "bg-success text-success-foreground" : "bg-card"}`}
+                      >
+                        {c}
+                      </button>
+                    ))
+                  )}
                   <button
-                    key={c}
-                    onClick={() => setAnswer(q, c)}
-                    className={`h-8 flex-1 rounded-xl text-xs font-bold ${q.answer === c ? "bg-success text-success-foreground" : "bg-secondary"}`}
+                    onClick={() => db.questions.update(q.id!, { kind: q.kind === "text" ? "mcq" : "text" })}
+                    className="shrink-0 rounded-xl bg-card px-2 py-1 text-[10px] font-bold"
                   >
-                    {c}
+                    {q.kind === "text" ? "MCQ" : "Write"}
                   </button>
-                ))}
+                </div>
               </div>
             ))}
           </div>
