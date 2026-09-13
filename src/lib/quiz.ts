@@ -199,26 +199,21 @@ function optionBoxes(p: PageInfo, box: Box): Box[] {
   const order: Choice[] = ["A", "B", "C", "D"];
   const picked = order.filter((c) => seen.has(c)).map((c) => ({ c, ...seen.get(c)! }));
   if (picked.length < 2) return [];
-  const rows = [...new Set(picked.map((p2) => Math.round(p2.y / 6)))].sort((a, b) => a - b);
   const boxes: Box[] = [];
   for (let i = 0; i < picked.length; i++) {
     const cur = picked[i]!;
     const next = picked[i + 1];
-    const sameRow = next && Math.abs(next.y - cur.y) < 8;
+    const sameRow = !!next && Math.abs(next.y - cur.y) < 8;
+    // bottom = next option that starts on a lower line, else end of the block
+    const below = picked.slice(i + 1).find((o) => o.y - cur.y >= 8);
     boxes.push({
       x0: cur.x - 4,
-      y0: cur.y - 4,
-      x1: sameRow ? next!.x - 2 : box.x1,
-      y1: sameRow ? cur.y + cur.y * 0 + rowHeight(cur.y, rows, box.y1) : next ? next.y - 2 : box.y1,
+      y0: cur.y - 5,
+      x1: sameRow ? next!.x - 3 : box.x1,
+      y1: below ? below.y - 2 : box.y1,
     });
   }
   return boxes.filter((b) => b.x1 - b.x0 > 16 && b.y1 - b.y0 > 8);
-}
-
-function rowHeight(y: number, rows: number[], bottom: number) {
-  const idx = rows.findIndex((r) => Math.abs(r * 6 - y) < 10);
-  const nextRow = rows[idx + 1];
-  return nextRow != null ? nextRow * 6 - 2 : bottom;
 }
 
 /* -------------------------------- parsing -------------------------------- */
