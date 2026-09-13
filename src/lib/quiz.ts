@@ -275,7 +275,7 @@ export async function parsePdf(file: Blob, onStep?: (s: string) => void): Promis
           if (nextCol) {
             const nm = markers(p, nextCol);
             const top = p.h * 0.05;
-            const end = nm[0］ === undefined ? colBottom : nm[0]!.y - 2;
+            const end = nm[0] ? nm[0]!.y - 2 : colBottom;
             if (end - top > 26) segs.push({ key, page: p.n, box: { x0: nextCol.x0, y0: top, x1: nextCol.x1, y1: end } });
           } else {
             const nx = pool[pi + 1];
