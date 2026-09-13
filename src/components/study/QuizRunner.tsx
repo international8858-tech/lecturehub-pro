@@ -35,6 +35,7 @@ export function QuizRunner({ quizId, onClose }: { quizId: number; onClose: () =>
   const [mins, setMins] = useState(15);
   const [idx, setIdx] = useState(0);
   const [chosen, setChosen] = useState<Record<number, Choice>>({});
+  const [typed, setTyped] = useState<Record<number, string>>({});
   const [marked, setMarked] = useState<number[]>([]);
   const [left, setLeft] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -68,6 +69,7 @@ export function QuizRunner({ quizId, onClose }: { quizId: number; onClose: () =>
 
   const start = () => {
     setChosen({});
+    setTyped({});
     setMarked([]);
     setIdx(0);
     setElapsed(0);
@@ -76,16 +78,28 @@ export function QuizRunner({ quizId, onClose }: { quizId: number; onClose: () =>
     setView("run");
   };
 
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ").replace(/[.,;]+$/, "");
+
   const submit = async () => {
-    const responses: Response[] = questions.map((q) => ({
-      no: q.no,
-      chosen: chosen[q.no] ?? null,
-      answer: q.answer,
-      marked: marked.includes(q.no),
-    }));
-    const correct = responses.filter((r) => r.answer && r.chosen === r.answer).length;
-    const wrong = responses.filter((r) => r.answer && r.chosen && r.chosen !== r.answer).length;
-    const skipped = responses.filter((r) => !r.chosen).length;
+    const responses: Response[] = questions.map((q) => {
+      const isText = q.kind === "text";
+      const t = typed[q.no]?.trim() || null;
+      const given = isText ? t : (chosen[q.no] ?? null);
+      const key = isText ? (q.answerText?.trim() || null) : q.answer;
+      const correct = !!given && !!key && (isText ? norm(t!) === norm(key) : chosen[q.no] === q.answer);
+      return {
+        no: q.no,
+        chosen: isText ? null : (chosen[q.no] ?? null),
+        answer: q.answer,
+        marked: marked.includes(q.no),
+        text: t,
+        correct,
+      };
+    });
+    const attempted = (r: Response) => !!(r.chosen || r.text);
+    const correct = responses.filter((r) => r.correct).length;
+    const wrong = responses.filter((r) => attempted(r) && !r.correct).length;
+    const skipped = responses.filter((r) => !attempted(r)).length;
     const attempt: Attempt = {
       quizId,
       quizName: quiz?.name ?? "Quiz",
@@ -154,6 +168,18 @@ export function QuizRunner({ quizId, onClose }: { quizId: number; onClose: () =>
                   </button>
                 ))}
               </div>
+              <label className="mt-2 flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                Custom time
+                <input
+                  type="number"
+                  min={0}
+                  max={600}
+                  value={mins}
+                  onChange={(e) => setMins(Math.max(0, Math.min(600, Number(e.target.value) || 0)))}
+                  className="w-20 rounded-xl bg-secondary px-2 py-1 text-sm font-extrabold text-foreground"
+                />
+                min
+              </label>
               <Btn className="mt-4 w-full" onClick={start} disabled={!questions.length}>
                 <Play className="h-4 w-4" /> Start Test
               </Btn>
@@ -234,19 +260,36 @@ export function QuizRunner({ quizId, onClose }: { quizId: number; onClose: () =>
         <input ref={picRef} type="file" accept="image/*" multiple hidden onChange={(e) => addFiles(e.target.files, "image")} />
 
         <Modal open={keyOpen} onClose={() => setKeyOpen(false)} title="Answer key">
-          <div className="max-h-[55vh] space-y-1.5 overflow-y-auto">
+          <div className="max-h-[55vh] space-y-2 overflow-y-auto">
             {questions.map((q) => (
-              <div key={q.id} className="flex items-center gap-2">
-                <span className="w-9 shrink-0 text-xs font-bold">Q{q.no}</span>
-                {CHOICES.map((c) => (
+              <div key={q.id} className="rounded-xl bg-secondary/40 p-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-9 shrink-0 text-xs font-bold">Q{q.no}</span>
+                  {q.kind === "text" ? (
+                    <input
+                      value={q.answerText ?? ""}
+                      onChange={(e) => db.questions.update(q.id!, { answerText: e.target.value })}
+                      placeholder="Type the correct answer"
+                      className="h-8 flex-1 rounded-xl bg-card px-2 text-xs font-semibold"
+                    />
+                  ) : (
+                    CHOICES.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setAnswer(q, c)}
+                        className={`h-8 flex-1 rounded-xl text-xs font-bold ${q.answer === c ? "bg-success text-success-foreground" : "bg-card"}`}
+                      >
+                        {c}
+                      </button>
+                    ))
+                  )}
                   <button
-                    key={c}
-                    onClick={() => setAnswer(q, c)}
-                    className={`h-8 flex-1 rounded-xl text-xs font-bold ${q.answer === c ? "bg-success text-success-foreground" : "bg-secondary"}`}
+                    onClick={() => db.questions.update(q.id!, { kind: q.kind === "text" ? "mcq" : "text" })}
+                    className="shrink-0 rounded-xl bg-card px-2 py-1 text-[10px] font-bold"
                   >
-                    {c}
+                    {q.kind === "text" ? "MCQ" : "Write"}
                   </button>
-                ))}
+                </div>
               </div>
             ))}
           </div>

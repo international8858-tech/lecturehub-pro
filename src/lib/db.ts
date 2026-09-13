@@ -77,12 +77,21 @@ export interface Question {
   imgBlob: Blob;
   solBlob: Blob | null;
   answer: Choice | null;
+  /** cropped picture of each option (A–D) when the paper has image options */
+  optBlobs?: Blob[];
+  /** "mcq" = A/B/C/D, "text" = type the answer yourself */
+  kind?: "mcq" | "text";
+  /** correct answer when the question is not multiple-choice */
+  answerText?: string | null;
 }
 export interface Response {
   no: number;
   chosen: Choice | null;
   answer: Choice | null;
   marked: boolean;
+  /** typed answer for non-MCQ questions */
+  text?: string | null;
+  correct?: boolean;
 }
 export interface Attempt {
   id?: number;
