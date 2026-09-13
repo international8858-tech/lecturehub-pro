@@ -35,6 +35,7 @@ export function QuizRunner({ quizId, onClose }: { quizId: number; onClose: () =>
   const [mins, setMins] = useState(15);
   const [idx, setIdx] = useState(0);
   const [chosen, setChosen] = useState<Record<number, Choice>>({});
+  const [typed, setTyped] = useState<Record<number, string>>({});
   const [marked, setMarked] = useState<number[]>([]);
   const [left, setLeft] = useState(0);
   const [elapsed, setElapsed] = useState(0);
