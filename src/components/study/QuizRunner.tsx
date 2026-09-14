@@ -244,7 +244,7 @@ export function QuizRunner({ quizId, onClose }: { quizId: number; onClose: () =>
             <div className="grid grid-cols-2 gap-2">
               {questions.map((q) => (
                 <div key={q.id} className="overflow-hidden rounded-xl bg-card shadow-card">
-                  <BlobImage blob={q.imgBlob} className="max-h-40 w-full object-cover object-top" alt={`Question ${q.no}`} />
+                  <BlobImage blob={q.imgBlob} className="max-h-40 w-full bg-white object-contain object-top" alt={`Question ${q.no}`} />
                   <div className="flex items-center justify-between px-2 py-1 text-[10px] font-bold">
                     <span>Q{q.no}</span>
                     <span className={q.answer ? "text-success" : "text-destructive"}>{q.answer ?? "no key"}</span>
@@ -327,24 +327,52 @@ export function QuizRunner({ quizId, onClose }: { quizId: number; onClose: () =>
         </header>
 
         <div className="relative flex-1 overflow-y-auto p-3">
-          {q && <BlobImage blob={q.imgBlob} className="mx-auto w-full max-w-[900px] rounded-2xl bg-card shadow-card" alt={`Question ${q.no}`} />}
+          {q && <BlobImage blob={q.imgBlob} className="mx-auto w-full max-w-[900px] rounded-2xl bg-white object-contain shadow-card" alt={`Question ${q.no}`} />}
+          {q && !!q.optBlobs?.length && q.kind !== "text" && (
+            <div className="mx-auto mt-2 grid w-full max-w-[900px] grid-cols-2 gap-2">
+              {q.optBlobs.map((b, i) => {
+                const c = CHOICES[i]!;
+                const on = chosen[q.no] === c;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setChosen((s) => (s[q.no] === c ? Object.fromEntries(Object.entries(s).filter(([k]) => k !== String(q.no))) as Record<number, Choice> : { ...s, [q.no]: c }))}
+                    className={`flex items-center gap-2 rounded-2xl p-1.5 text-left ${on ? "bg-primary/15 ring-2 ring-primary" : "bg-card"}`}
+                  >
+                    <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-extrabold">{c}</span>
+                    <BlobImage blob={b} className="max-h-24 w-full bg-white object-contain" alt={`Option ${c}`} />
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="relative border-t bg-card px-3 pb-3 pt-2 safe-bottom">
-          <div className="grid grid-cols-4 gap-2">
-            {CHOICES.map((c) => {
-              const on = q && chosen[q.no] === c;
-              return (
-                <button
-                  key={c}
-                  onClick={() => q && setChosen((s) => (s[q.no] === c ? Object.fromEntries(Object.entries(s).filter(([k]) => k !== String(q.no))) as Record<number, Choice> : { ...s, [q.no]: c }))}
-                  className={`rounded-2xl py-3 text-base font-extrabold ${on ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
-                >
-                  {c}
-                </button>
-              );
-            })}
-          </div>
+          {q && q.kind === "text" ? (
+            <input
+              value={typed[q.no] ?? ""}
+              onChange={(e) => setTyped((s) => ({ ...s, [q.no]: e.target.value }))}
+              placeholder="Type your answer"
+              className="h-11 w-full rounded-2xl bg-secondary px-3 text-sm font-bold"
+            />
+          ) : (
+            <div className="grid grid-cols-4 gap-2">
+              {CHOICES.map((c) => {
+                const on = q && chosen[q.no] === c;
+                return (
+                  <button
+                    key={c}
+                    onClick={() => q && setChosen((s) => (s[q.no] === c ? Object.fromEntries(Object.entries(s).filter(([k]) => k !== String(q.no))) as Record<number, Choice> : { ...s, [q.no]: c }))}
+                    className={`rounded-2xl py-3 text-base font-extrabold ${on ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
+                  >
+                    {c}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="mt-2 flex items-center gap-2">
             <Btn variant="secondary" onClick={() => setIdx((i) => Math.max(0, i - 1))} disabled={idx === 0}>
               <ChevronLeft className="h-4 w-4" />
